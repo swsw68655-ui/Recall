@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Recall</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6c4fdc">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Recall">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{color-scheme:light;--bg:#c8b6f3;--card:#fff;--fld:#f3f1fa;--tx:#1b1535;--mut:#4b3f78;--bd:#e4ddf7;--ac:#5a3fc8;--pr:#6c4fdc;--onpr:#fff;--acs:#ece6fb;--bad:#b3261e;--warn:#fff4d6;--warntx:#5c4400;--c1:#e0527e;--c2:#e8a93a;--c3:#35b28d;--c4:#6c4fdc;--p0:#a9e8d3;--p1:#f9b8d0;--p2:#fce59b;--p3:#bfd3f8;--p4:#fbc9b4;--p5:#d9ccf6;--r:20px}
+:root[data-theme=dark]{color-scheme:dark;--bg:#17122b;--card:#231c3f;--fld:#1b1534;--tx:#f1eefb;--mut:#b2a8d6;--bd:#3a3060;--ac:#b9a6fb;--pr:#7c5fe8;--acs:#322858;--bad:#f2a09a;--warn:#3a3000;--warntx:#f5e3a1;--c1:#f27c9f;--c2:#f0c15a;--c3:#58d0a9;--c4:#9b85f5;--p0:#1f4d45;--p1:#5a2a44;--p2:#594a1c;--p3:#26407a;--p4:#5e3527;--p5:#41357a}
+@media(prefers-color-scheme:dark){:root[data-theme=auto]{color-scheme:dark;--bg:#17122b;--card:#231c3f;--fld:#1b1534;--tx:#f1eefb;--mut:#b2a8d6;--bd:#3a3060;--ac:#b9a6fb;--pr:#7c5fe8;--acs:#322858;--bad:#f2a09a;--warn:#3a3000;--warntx:#f5e3a1;--c1:#f27c9f;--c2:#f0c15a;--c3:#58d0a9;--c4:#9b85f5;--p0:#1f4d45;--p1:#5a2a44;--p2:#594a1c;--p3:#26407a;--p4:#5e3527;--p5:#41357a}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+h1{font-size:1.75rem;line-height:1.2;letter-spacing:-.015em;margin:0}
+h2{font-size:1.1rem;line-height:1.3;margin:0 0 4px}
+p{margin:6px 0}
+.meta{color:var(--mut);font-size:.9rem}
+main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 104px max(16px,env(safe-area-inset-left))}
+.rv main{padding-bottom:0}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 0 20px}
+.ibtn{width:44px;padding:0;border:0;border-radius:50%;background:var(--card);color:var(--ac)}
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+#nav[hidden]{display:none}
+.nav-in{display:flex;max-width:760px;margin:0 auto}
+.brand{display:none;font-weight:800;font-size:1.2rem;margin-right:auto;padding-left:8px;color:var(--ac)}
+.tab{flex:1;flex-direction:column;gap:2px;min-height:60px;padding:6px 4px;border:0;border-radius:0;background:none;color:var(--mut);font-size:.75rem}
+.tab:hover{border:0;color:var(--tx)}
+.tab[aria-current]{color:var(--ac);font-weight:700}
+@media(min-width:700px){
+#nav{position:sticky;top:0;bottom:auto;border-radius:0;padding:0 16px}
+.nav-in{align-items:center;gap:4px;min-height:64px}
+.brand{display:block}
+.tab{flex:none;flex-direction:row;gap:8px;min-height:44px;padding:0 16px;border-radius:14px;font-size:.95rem}
+.tab[aria-current]{background:var(--acs)}
+main{padding-bottom:48px}
+.stats{grid-template-columns:repeat(4,1fr)!important}
+}
+button,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 18px;border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);font:inherit;cursor:pointer}
+button:hover,.btn:hover{border-color:var(--ac)}
+button:disabled{opacity:.5;cursor:default}
+.primary{background:var(--pr);border-color:var(--pr);color:var(--onpr);font-weight:600}
+.primary:hover{border-color:var(--pr);filter:brightness(1.1)}
+.ghost{background:none;border-color:transparent}
+.danger{color:var(--bad)}
+[aria-pressed=true]{background:var(--pr);border-color:var(--pr);color:var(--onpr);font-weight:600}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.sr{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden}
+.sr:focus-visible+label{outline:3px solid var(--ac);outline-offset:2px}
+.panel{background:var(--card);border-radius:var(--r);padding:18px;margin-bottom:16px}
+.b0{background:var(--p0)}.b1{background:var(--p1)}.b2{background:var(--p2)}.b3{background:var(--p3)}.b4{background:var(--p4)}.b5{background:var(--p5)}
+.hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.hero h2{font-size:1.25rem}
+.hero>div{flex:1 1 200px}
+.face{flex:none;line-height:0}
+.hero .primary{background:var(--tx);border-color:var(--tx);color:var(--card)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.stat{border-radius:18px;padding:14px}
+.stat b{display:block;font-size:1.75rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;opacity:.8}
+.seg{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--bd);margin:12px 0 8px}
+.seg i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.9rem}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.heat{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:12px}
+.hc{aspect-ratio:1;border-radius:5px;background:var(--bd)}
+.hc.l1,.hc.l2,.hc.l3,.hc.l4{background:var(--pr)}
+.l1{opacity:.3}.l2{opacity:.55}.l3{opacity:.78}
+.hc.now{outline:2px solid var(--tx);outline-offset:1px}
+.frow{display:flex;align-items:center;gap:12px}
+.fh{flex:1;min-width:0;justify-content:flex-start;gap:12px;text-align:left;border:0;background:none;padding:0;min-height:56px}
+.ft{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;color:var(--tx);flex:none}
+.fn{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}
+.chev{margin-left:auto;color:var(--mut);line-height:0;transition:transform .15s}
+.chev.open{transform:rotate(90deg)}
+.dl{margin-top:12px;border-top:1px solid var(--bd)}
+.dr{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.dr .n{flex:1 1 160px;min-width:0;overflow-wrap:anywhere}
+.dr .row,.dl>.row{margin:0;padding-top:8px}
+.dl>.row{justify-content:flex-end}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{padding:2px 10px;border-radius:999px;background:var(--acs);color:var(--ac);font-size:.8rem;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.two{display:grid;gap:0 12px}
+@media(min-width:520px){.two{grid-template-columns:1fr 1fr}}
+label.f{display:block;margin:14px 0 4px;font-weight:600}
+input[type=text],input[type=number],textarea{width:100%;min-height:44px;padding:10px 14px;border:1px solid var(--bd);border-radius:14px;background:var(--fld);color:var(--tx);font:inherit}
+input[type=file]{width:100%;min-height:44px;padding:8px 0;font:inherit;color:var(--tx)}
+textarea{min-height:130px;resize:vertical}
+.warn{background:var(--warn);color:var(--warntx);padding:12px 14px;border-radius:14px;margin:0 0 16px}
+.status{margin:0 0 16px;padding:10px 14px;border-radius:14px;background:var(--card);color:var(--ac);font-weight:600}
+.status.err{background:var(--warn);color:var(--bad)}
+.top{display:flex;align-items:center;gap:12px;padding:8px 0 12px}
+.bar{flex:1;height:8px;background:var(--card);border-radius:4px;overflow:hidden}
+.bar div{height:100%;background:var(--pr)}
+.rvp{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.card{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;background:var(--card);border-radius:var(--r);padding:28px 20px;min-height:40vh;font-size:1.4rem;line-height:1.5;overflow-wrap:anywhere}
+.f1,.ans{white-space:pre-wrap}
+.ans{border-top:1px solid var(--bd);margin-top:20px;padding-top:20px}
+.acts{position:sticky;bottom:0;background:var(--bg);padding:12px 0 calc(12px + env(safe-area-inset-bottom))}
+.acts .primary{width:100%;min-height:60px;font-size:1.1rem}
+.grades{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grades button{flex-direction:column;min-height:64px;padding:0 4px;border:0;background:var(--c);color:var(--tx)}
+.grades small{font-size:.8rem;opacity:.75}
+.g1{--c:var(--p1)}.g2{--c:var(--p4)}.g3{--c:var(--p0)}.g4{--c:var(--p3)}
+.hint{text-align:center;margin:0}
+@media(hover:none){.hint{display:none}}
+.stage{position:relative;line-height:0;touch-action:none;user-select:none;-webkit-user-select:none;border-radius:12px;overflow:hidden}
+.stage img{width:100%;display:block;pointer-events:none}
+.m{position:absolute;background:var(--mut);border:1px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:1rem;line-height:1}
+.m.t{background:var(--pr);color:var(--onpr);font-weight:700}
+.m.rev{background:transparent;border:3px solid var(--pr)}
+.m.ed{background:rgba(108,79,220,.55);border:2px solid var(--pr)}
+.card.io{padding:8px;min-height:0;justify-content:flex-start}
+.dlgo{position:fixed;inset:0;z-index:100;background:rgba(20,12,45,.55);display:flex;align-items:center;justify-content:center;padding:20px}.dlg{background:var(--card);color:var(--tx);border-radius:var(--r);padding:22px;max-width:380px;width:100%}.dlg p{margin:0 0 16px}.dlg .row{justify-content:flex-end}
+</style>
+</head>
+<body>
+<nav id="nav" aria-label="Main"></nav>
+<main id="app"></main>
+<script>
+(()=>{
+'use strict';
+const KEY='recall.v1',MIN=6e4,DAY=864e5;
+let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null;
+const draft={folder:'',deck:'',paste:''};
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d)=>Number.isFinite(v)?v:d;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmt=d=>d<30?Math.round(d)+'d':d<365?Math.round(d/30)+'mo':(Math.round(d/36.5)/10)+'y';
+const plural=(n,w)=>n+' '+w+(n===1?'':'s');
+
+function clean(o){
+  if(!o||typeof o!=='object'||!Array.isArray(o.cards))return null;
+  const cards=[];
+  for(const c of o.cards){
+    if(!c||typeof c.f!=='string'||typeof c.b!=='string')continue;
+    const x={id:String(c.id||uid()),folder:String(c.folder||'General'),deck:String(c.deck||'Default'),f:c.f,b:c.b,ease:num(c.ease,2.5),ivl:num(c.ivl,0),reps:num(c.reps,0),lapses:num(c.lapses,0),due:num(c.due,0),isNew:c.isNew!==false};
+    if(typeof c.img==='string'&&Array.isArray(c.boxes)){x.img=c.img;x.k=num(c.k,0);x.boxes=c.boxes.filter(m=>m&&[m.x,m.y,m.w,m.h].every(Number.isFinite)).map(m=>({x:m.x,y:m.y,w:m.w,h:m.h}))}
+    cards.push(x);
+  }
+  const limit=Number.isFinite(o.limit)&&o.limit>=0?Math.floor(o.limit):20;
+  const log={};
+  if(o.log&&typeof o.log==='object')for(const k in o.log){const v=o.log[k];if(v&&typeof v==='object')log[k]={n:num(v.n,0),r:num(v.r,0)}}
+  const imgs={};
+  if(o.imgs&&typeof o.imgs==='object')for(const k in o.imgs)if(typeof o.imgs[k]==='string'&&o.imgs[k].startsWith('data:image/'))imgs[k]=o.imgs[k];
+  return{cards:cards.filter(c=>!c.img||(imgs[c.img]&&c.boxes[c.k])),limit,log,imgs,theme:['light','dark'].includes(o.theme)?o.theme:'auto'};
+}
+const idb=(()=>{try{return window.indexedDB}catch(e){return null}})();
+let db=null,saved=new Set(),tmr=null;
+const req=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+function openDB(){
+  return Promise.race([new Promise((res,rej)=>{
+    if(!idb)return rej(new Error('no idb'));
+    const r=idb.open('recall',1);
+    r.onupgradeneeded=()=>{r.result.createObjectStore('state');r.result.createObjectStore('imgs')};
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error('blocked'));
+  }),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4000))]);
+}
+async function idbLoad(){
+  const tx=db.transaction(['state','imgs'],'readonly'),im=tx.objectStore('imgs');
+  const main=await req(tx.objectStore('state').get('main'));
+  if(!main)return null;
+  const keys=await req(im.getAllKeys()),vals=await req(im.getAll()),imgs={};
+  keys.forEach((k,i)=>imgs[k]=vals[i]);
+  return clean(Object.assign({},main,{imgs}));
+}
+function lsSave(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOK=true}catch(e){storeOK=false}return storeOK}
+function setOK(v){if(storeOK!==v){storeOK=v;render()}}
+function flush(){
+  clearTimeout(tmr);tmr=null;
+  if(!db)return Promise.resolve(lsSave());
+  const snap={cards:S.cards,limit:S.limit,log:S.log,theme:S.theme},imgs=S.imgs;
+  const add=Object.keys(imgs).filter(k=>!saved.has(k)).map(k=>[k,imgs[k]]);
+  const del=[...saved].filter(k=>!(k in imgs));
+  return new Promise(res=>{
+    try{
+      const tx=db.transaction(['state','imgs'],'readwrite'),im=tx.objectStore('imgs');
+      tx.objectStore('state').put(snap,'main');
+      add.forEach(a=>im.put(a[1],a[0]));del.forEach(k=>im.delete(k));
+      tx.oncomplete=()=>{add.forEach(a=>saved.add(a[0]));del.forEach(k=>saved.delete(k));setOK(true);res(true)};
+      tx.onerror=tx.onabort=()=>{setOK(false);res(false)};
+    }catch(e){setOK(false);res(false)}
+  });
+}
+function save(){if(!db){lsSave();return}clearTimeout(tmr);tmr=setTimeout(flush,200)}
+addEventListener('pagehide',()=>{if(tmr)flush()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&tmr)flush()});
+
+let est=null;
+function refreshEst(){
+  if(!(navigator.storage&&navigator.storage.estimate))return;
+  navigator.storage.estimate().then(e=>{est=e;const t=document.getElementById('stor'),b=document.getElementById('storbar');if(t)t.textContent=storTxt();if(b)b.style.width=storPct()+'%'}).catch(()=>{});
+}
+const mb=v=>v>=1073741824?(v/1073741824).toFixed(1)+' GB':Math.max(0.1,v/1048576).toFixed(1)+' MB';
+function storTxt(){
+  if(!db)return 'Using browser storage with a limit of roughly 5 MB. Back up often.';
+  if(est&&est.usage!=null&&est.quota)return 'Using about '+mb(est.usage)+' of roughly '+mb(est.quota)+' available on this device.';
+  return 'Your cards are saved in this browser\'s database, which has far more room than before.';
+}
+const storPct=()=>est&&est.usage!=null&&est.quota?Math.min(100,Math.max(1,100*est.usage/est.quota)):1;
+
+async function load(){
+  try{db=await openDB()}catch(e){db=null}
+  if(db){
+    try{
+      const s=await idbLoad();
+      if(s)S=s;
+      else{
+        let old=null;
+        try{const r=localStorage.getItem(KEY);if(r)old=clean(JSON.parse(r))}catch(e){}
+        if(old){S=old;if(await flush())try{localStorage.removeItem(KEY)}catch(e){}}
+      }
+      saved=new Set(Object.keys(S.imgs));
+      try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+      refreshEst();
+      return;
+    }catch(e){db=null}
+  }
+  try{
+    const r=localStorage.getItem(KEY);
+    if(r){const s=clean(JSON.parse(r));if(s)S=s}
+  }catch(e){if(!(e instanceof SyntaxError))storeOK=false}
+  try{localStorage.setItem(KEY+'.t','1');localStorage.removeItem(KEY+'.t')}catch(e){storeOK=false}
+}
+
+const dayLog=()=>S.log[today()]||{n:0,r:0};
+const remNew=()=>Math.max(0,S.limit-dayLog().n);
+function decks(){
+  const m={},now=Date.now();
+  for(const c of S.cards){
+    const k=c.folder+'|'+c.deck,d=m[k]||(m[k]={folder:c.folder,name:c.deck,nw:0,due:0,total:0});
+    d.total++;
+    if(c.isNew)d.nw++;else if(c.due<=now)d.due++;
+  }
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
+}
+
+function sched(c,g){
+  const now=Date.now();
+  let e=c.ease,i=c.ivl,r=c.reps,l=c.lapses;
+  const gi=c.reps===0?1:c.reps===1?3:Math.max(c.ivl+1,Math.round(c.ivl*c.ease));
+  if(g===1){e=Math.max(1.3,e-.2);i=0;r=0;l++}
+  else if(g===2){e=Math.max(1.3,e-.15);i=Math.max(1,Math.round(c.ivl*1.2));r++}
+  else if(g===3){i=gi;r++}
+  else{i=c.reps===0?4:Math.max(gi+1,Math.round(c.ivl*c.ease*1.3));e+=.15;r++}
+  return{ease:+e.toFixed(2),ivl:i,reps:r,lapses:l,due:g===1?now+10*MIN:now+i*DAY,isNew:false};
+}
+
+function start(f,d){
+  const now=Date.now();
+  const rev=S.cards.filter(c=>(!f||c.folder===f)&&(!d||c.deck===d)&&!c.isNew&&c.due<=now).sort((a,b)=>a.due-b.due);
+  const nw=S.cards.filter(c=>(!f||c.folder===f)&&(!d||c.deck===d)&&c.isNew).slice(0,remNew());
+  sess={f,d,q:[...rev,...nw].map(c=>c.id),done:0,show:false};
+  view='study';msg=null;render();
+}
+function grade(g){
+  const id=sess.q[0],c=S.cards.find(x=>x.id===id);
+  if(c){
+    const k=today(),L=S.log[k]||(S.log[k]={n:0,r:0});
+    if(c.isNew)L.n++;else L.r++;
+    Object.assign(c,sched(c,g));
+  }
+  sess.q.shift();
+  if(g===1&&c)sess.q.push(id);
+  sess.done++;sess.show=false;
+  save();render();
+}
+
+function parse(t){
+  t=t.replace(/^\uFEFF/,'');
+  let q=0,tb=0,sc=0,cm=0;
+  for(const ch of t){
+    if(ch==='"')q^=1;
+    else if(!q){if(ch==='\n')break;if(ch==='\t')tb++;else if(ch===';')sc++;else if(ch===',')cm++}
+  }
+  const sep=tb?'\t':sc>cm?';':',';
+  const rows=[];let row=[],f='',inq=false;
+  for(let i=0;i<t.length;i++){
+    const ch=t[i];
+    if(inq){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++}else inq=false}else f+=ch}
+    else if(ch==='"'&&f==='')inq=true;
+    else if(ch===sep){row.push(f);f=''}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;row.push(f);f='';rows.push(row);row=[]}
+    else f+=ch;
+  }
+  row.push(f);rows.push(row);
+  return rows.map(r=>[(r[0]||'').trim(),(r[1]||'').trim()]).filter(r=>r[0]&&r[1]);
+}
+
+function ask(text,ok){
+  return new Promise(res=>{
+    const o=document.createElement('div');o.className='dlgo';
+    o.innerHTML='<div class="dlg" role="alertdialog" aria-modal="true"><p></p><div class="row"><button data-k="0">Cancel</button><button class="primary" data-k="1"></button></div></div>';
+    o.querySelector('p').textContent=text;o.querySelector('[data-k="1"]').textContent=ok||'Delete';
+    const done=v=>{document.removeEventListener('keydown',kd,true);o.remove();res(v)};
+    const kd=e=>{if(e.key==='Escape'){e.preventDefault();done(false)}};
+    o.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b)done(b.dataset.k==='1');else if(e.target===o)done(false)});
+    document.addEventListener('keydown',kd,true);
+    document.body.appendChild(o);o.querySelector('[data-k="0"]').focus();
+  });
+}
+function say(t,err){msg={t,err:!!err};render()}
+
+async function doImport(){
+  const file=$('#file').files[0];
+  let text=draft.paste,name=draft.deck.trim();
+  if(file){
+    try{text=await file.text()}catch(e){return say('Could not read that file. Try pasting the text instead.',true)}
+    if(!name)name=file.name.replace(/\.[^.]+$/,'');
+  }
+  name=name||'Default';const folder=draft.folder.trim()||'General';
+  const rows=parse(text||'');
+  if(!rows.length)return say('No cards found. Put one card on each line, with the front and back separated by a tab, semicolon or comma.',true);
+  for(const r of rows)S.cards.push({id:uid(),folder:folder,deck:name,f:r[0],b:r[1],ease:2.5,ivl:0,reps:0,lapses:0,due:0,isNew:true});
+  save();draft.paste='';draft.deck='';
+  say('Imported '+plural(rows.length,'card')+' into "'+name+'".');
+}
+function backup(){
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='recall-backup-'+today()+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  say('Backup downloaded.');
+}
+async function restore(file){
+  let s=null;
+  try{s=clean(JSON.parse(await file.text()))}catch(e){}
+  if(!s)return say('That file is not a valid Recall backup. Nothing changed.',true);
+  if(!await ask('Replace all current data with this backup ('+plural(s.cards.length,'card')+')?','Replace'))return;
+  S=s;save();say('Backup restored: '+plural(s.cards.length,'card')+'.');
+}
+
+let io=null,drag=null;
+const cl=v=>Math.min(1,Math.max(0,v));
+const pos=b=>'left:'+b.x*100+'%;top:'+b.y*100+'%;width:'+b.w*100+'%;height:'+b.h*100+'%';
+function prune(){const u=new Set(S.cards.map(c=>c.img));for(const k in S.imgs)if(!u.has(k))delete S.imgs[k]}
+function shrink(file){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const s=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.7))};im.onerror=()=>{URL.revokeObjectURL(u);no()};im.src=u})}
+async function openIO(file){
+  try{io={img:await shrink(file),boxes:[],folder:draft.folder.trim(),deck:draft.deck.trim()};view='io';msg=null;render()}
+  catch(e){say('Could not read that image. Try a JPEG or PNG.',true)}
+}
+function makeIO(){
+  if(!io.boxes.length)return;
+  const name=io.deck.trim()||'Images',id=uid(),n=io.boxes.length;
+  S.imgs[id]=io.img;
+  io.boxes.forEach((b,k)=>S.cards.push({id:uid(),folder:io.folder.trim()||'General',deck:name,f:'Image occlusion',b:'',ease:2.5,ivl:0,reps:0,lapses:0,due:0,isNew:true,img:id,boxes:io.boxes,k}));
+  io=null;draft.deck='';view='add';save();
+  say(storeOK?'Created '+plural(n,'card')+' in "'+name+'".':'Created '+plural(n,'card')+', but this browser could not store them. Use a smaller image or delete old image decks.',!storeOK);
+}
+function ioHTML(){
+  return '<h1>New image occlusion</h1>'+warnHTML()+
+  '<p class="meta">Drag on the image to cover each label you want to learn. Each cover becomes one card.</p>'+
+  '<div class="stage" id="stage"><img src="'+io.img+'" alt="Image to occlude">'+io.boxes.map(b=>'<div class="m ed" style="'+pos(b)+'"></div>').join('')+'</div>'+
+  '<p class="meta">'+plural(io.boxes.length,'cover')+' so far</p>'+
+  '<label class="f" for="iofolder">Folder</label><input type="text" id="iofolder" autocomplete="off" placeholder="General" list="fl" value="'+esc(io.folder)+'"><datalist id="fl">'+flOpts()+'</datalist><label class="f" for="iodeck">Deck name</label><input type="text" id="iodeck" autocomplete="off" placeholder="Images" value="'+esc(io.deck)+'">'+
+  '<div class="row"><button class="primary" data-a="iomake"'+(io.boxes.length?'':' disabled')+'>Create '+plural(io.boxes.length,'card')+'</button><button data-a="ioundo">Undo last cover</button><button data-a="iocancel">Cancel</button></div>';
+}
+const warnHTML=()=>storeOK?'':'<div class="warn" role="alert">This browser is blocking storage. You can study now, but your progress will not be saved. Download a backup before you close the page.</div>';
+
+const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const svg=(p,n)=>'<svg viewBox="0 0 24 24" width="'+(n||24)+'" height="'+(n||24)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';
+const ICON={
+ home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-5h4v5h3.5a1 1 0 0 0 1-1v-9"/>',
+ decks:'<rect x="4" y="8" width="13" height="12" rx="3"/><path d="M8 4.5h9a3 3 0 0 1 3 3V16"/>',
+ add:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+ folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+ chev:'<path d="m9 6 6 6-6 6"/>',
+ moon:'<path d="M20.5 13.5A8.5 8.5 0 1 1 10.5 3.5a7 7 0 0 0 10 10z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/>'
+};
+const TABS=[['home','Home'],['decks','Study'],['add','Add cards'],['settings','Settings']];
+const isDark=()=>S.theme==='dark'||(S.theme==='auto'&&!!window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+let openF=null;
+function navHTML(){
+  const cur=view==='io'?'add':view;
+  return '<div class="nav-in"><span class="brand">Recall</span>'+TABS.map(t=>'<button class="tab" data-v="'+t[0]+'"'+(cur===t[0]?' aria-current="page"':'')+'>'+svg(ICON[t[0]])+'<span>'+t[1]+'</span></button>').join('')+'</div>';
+}
+const statusHTML=()=>msg?'<p class="status'+(msg.err?' err':'')+'" role="status">'+esc(msg.t)+'</p>':'';
+const head=(t,p)=>'<header class="ph"><div><h1>'+t+'</h1>'+(p?'<p class="meta">'+p+'</p>':'')+'</div><button class="ibtn" data-a="theme" aria-label="'+(isDark()?'Switch to day mode':'Switch to night mode')+'">'+svg(isDark()?ICON.sun:ICON.moon)+'</button></header>';
+const flOpts=()=>[...new Set(S.cards.map(c=>c.folder))].map(f=>'<option value="'+esc(f)+'">').join('');
+
+function tree(){
+  const m={};
+  for(const d of decks()){
+    const f=m[d.folder]||(m[d.folder]={name:d.folder,nw:0,due:0,total:0,decks:[]});
+    f.nw+=d.nw;f.due+=d.due;f.total+=d.total;f.decks.push(d);
+  }
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function stats(){
+  const ds=decks(),L=dayLog();
+  const due=ds.reduce((s,d)=>s+d.due,0),nw=Math.min(ds.reduce((s,d)=>s+d.nw,0),remNew());
+  let n=0,l=0,m=0;
+  for(const c of S.cards){if(c.isNew)n++;else if(c.ivl>=21)m++;else l++}
+  const days=[];
+  for(let i=27;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const v=S.log[dkey(d)];days.push({d,v:v?v.n+v.r:0})}
+  let st=0,j=days[27].v?27:26;
+  for(;j>=0&&days[j].v>0;j--)st++;
+  return{due,nw,n,l,m,days,st,done:L.n+L.r};
+}
+
+function homeHTML(){
+  const s=stats(),tot=s.due+s.nw,N=S.cards.length;
+  const hero=(c,h,p,btn)=>'<div class="panel hero '+c+'"><div><h2>'+h+'</h2><p class="meta" style="color:inherit">'+p+'</p></div>'+btn+'</div>';
+  let hr;
+  if(!N)hr=hero('b1','Add your first cards','Import a CSV or text file, or build image occlusion cards from a diagram.','<button class="primary" data-a="tab" data-v="add">Add cards</button>');
+  else if(tot)hr=hero('b1',plural(tot,'card')+' to review today',s.due+' due, '+s.nw+' new','<button class="primary" data-a="study">Study all</button>');
+  else hr=hero('b0','You\'re done for today','Come back tomorrow, or raise the daily new-card limit in Settings.','');
+  const tile=(b,l,i)=>'<div class="stat b'+i+'"><b>'+b+'</b><span>'+l+'</span></div>';
+  const pc=v=>N?(100*v/N).toFixed(1):0;
+  const lv=v=>v>30?4:v>15?3:v>5?2:v>0?1:0;
+  const sw=(c,t,v)=>'<span><i class="sw" style="background:var(--'+c+')"></i>'+t+' '+v+'</span>';
+  const more=N?'<div class="stats">'+tile(s.due,'Due now',0)+tile(s.nw,'New cards today',3)+tile(s.done,'Reviewed today',2)+tile(N,'Total cards',5)+'</div>'+
+  '<section class="panel"><h2>Card progress</h2><div class="seg" role="img" aria-label="'+s.n+' new, '+s.l+' learning, '+s.m+' mature"><i style="width:'+pc(s.m)+'%;background:var(--c3)"></i><i style="width:'+pc(s.l)+'%;background:var(--c2)"></i><i style="width:'+pc(s.n)+'%;background:var(--c4)"></i></div><div class="legend">'+sw('c3','Mature',s.m)+sw('c2','Learning',s.l)+sw('c4','New',s.n)+'</div><p class="meta">Mature cards have an interval of 21 days or more.</p></section>'+
+  '<section class="panel"><h2>Last 28 days</h2><p class="meta">'+(s.st?'Current streak: '+plural(s.st,'day')+'.':'No streak yet. Review a card today to start one.')+' Darker squares mean more cards.</p><div class="heat">'+s.days.map((x,i)=>'<span class="hc l'+lv(x.v)+(i===27?' now':'')+'" title="'+esc(x.d.toLocaleDateString(undefined,{month:'short',day:'numeric'}))+': '+plural(x.v,'card')+'"></span>').join('')+'</div></section>':'';
+  return head('Today',new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}))+warnHTML()+statusHTML()+hr+more;
+}
+
+function decksHTML(){
+  const t=tree(),rn=remNew(),s=stats(),tot=s.due+s.nw;
+  if(!openF)openF=new Set(t.length<=2?t.map(f=>f.name):[]);
+  const chips=(n,d)=>'<div class="chips"><span class="chip">'+n+' new</span><span class="chip">'+d+' due</span></div>';
+  const rows=t.map((f,i)=>{
+    const o=openF.has(f.name),fe=esc(f.name);
+    return '<section class="panel"><div class="frow"><button class="fh" data-a="fold" data-f="'+fe+'" aria-expanded="'+o+'"><span class="ft b'+(i%6)+'">'+svg(ICON.folder)+'</span><span class="fn"><strong>'+fe+'</strong><span class="meta">'+plural(f.decks.length,'deck')+', '+plural(f.total,'card')+'</span></span><span class="chev'+(o?' open':'')+'">'+svg(ICON.chev)+'</span></button><button class="primary" data-a="study" data-f="'+fe+'">Study</button></div>'+chips(Math.min(f.nw,rn),f.due)+
+    (o?'<div class="dl">'+f.decks.map(d=>'<div class="dr"><div class="n"><strong>'+esc(d.name)+'</strong>'+chips(Math.min(d.nw,rn),d.due)+'</div><div class="row"><button data-a="study" data-f="'+fe+'" data-d="'+esc(d.name)+'">Study</button><button class="ghost danger" data-a="del" data-f="'+fe+'" data-d="'+esc(d.name)+'" aria-label="Delete deck '+esc(d.name)+'">Delete</button></div></div>').join('')+'<div class="row"><button class="ghost danger" data-a="delf" data-f="'+fe+'">Delete folder</button></div></div>':'')+'</section>';
+  }).join('');
+  return head('Study',t.length?'Open a folder to see its decks.':'')+warnHTML()+statusHTML()+
+  (t.length&&tot?'<div class="panel hero b5"><div><h2>All folders</h2><p class="meta" style="color:inherit">'+plural(tot,'card')+' ready</p></div><button class="primary" data-a="study">Study all</button></div>':'')+
+  (rows||'<div class="panel"><h2>No folders yet</h2><p class="meta">Add cards to create your first folder and deck.</p><div class="row"><button class="primary" data-a="tab" data-v="add">Add cards</button></div></div>');
+}
+
+function addHTML(){
+  return head('Add cards')+warnHTML()+statusHTML()+
+  '<section class="panel"><h2>Where do the cards go?</h2><div class="two"><div><label class="f" for="folder">Folder</label><input type="text" id="folder" autocomplete="off" placeholder="General" list="fl" value="'+esc(draft.folder)+'"><datalist id="fl">'+flOpts()+'</datalist></div><div><label class="f" for="deck">Deck</label><input type="text" id="deck" autocomplete="off" placeholder="Default" value="'+esc(draft.deck)+'"></div></div></section>'+
+  '<section class="panel"><h2>Import from text or a file</h2>'+
+  '<label class="f" for="file">Upload a file (.csv, .tsv or .txt)</label><input type="file" id="file" accept=".csv,.tsv,.txt,text/*">'+
+  '<label class="f" for="paste">Or paste cards here</label><textarea id="paste" placeholder="Front&#9;Back">'+esc(draft.paste)+'</textarea>'+
+  '<div class="row"><button class="primary" data-a="import">Import cards</button></div></section>'+
+  '<section class="panel"><h2>Image occlusion</h2>'+
+  '<label class="f" for="iofile">Choose an image</label><input type="file" id="iofile" accept="image/*"></section>';
+}
+
+function settingsHTML(){
+    const th=(v,n)=>'<button data-a="th" data-t="'+v+'" aria-pressed="'+(S.theme===v)+'">'+n+'</button>';
+  return head('Settings')+warnHTML()+statusHTML()+
+  '<section class="panel"><h2>Appearance</h2><p class="meta">Auto follows your device. Night mode uses a dark background that is easier on the eyes.</p><div class="row">'+th('auto','Auto')+th('light','Day')+th('dark','Night')+'</div></section>'+
+  '<section class="panel"><h2>Daily limit</h2><p class="meta">The most new cards you study each day, across all decks.</p><label class="f" for="limit">New cards per day</label><input type="number" id="limit" min="0" max="9999" inputmode="numeric" value="'+S.limit+'"></section>'+
+  '<section class="panel"><h2>Your data</h2><p class="meta">Your cards and progress live in this browser only. To move to another device, download a backup here and restore it there. Clearing your browser data erases everything, so back up often.</p>'+
+  '<div class="seg" role="img" aria-label="Storage used"><i id="storbar" style="width:'+(db?storPct():Math.min(100,JSON.stringify(S).length/51200))+'%;background:var(--pr)"></i></div><p class="meta" id="stor">'+storTxt()+'</p>'+
+  '<div class="row"><button class="primary" data-a="backup">Download backup</button><input class="sr" type="file" id="restore" accept=".json,application/json"><label class="btn" for="restore">Restore backup</label></div></section>';
+}
+
+function studyHTML(){
+  const q=sess.q,c=q.length&&S.cards.find(x=>x.id===q[0]);
+  const exit='<button class="ghost" data-a="tab" data-v="decks">Exit</button>';
+  if(!c)return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">'+(sess.done?'Session complete. You reviewed '+plural(sess.done,'card')+'.':'Nothing is due right now. Come back later or raise your daily new-card limit.')+'</div></div><div class="acts"><button class="primary" data-a="tab" data-v="decks">Back to decks</button></div></div>';
+  const pct=Math.round(100*sess.done/(sess.done+q.length));
+  let acts;
+  if(!sess.show)acts='<button class="primary" data-a="show">Show answer</button>';
+  else acts='<div class="grades">'+['Again','Hard','Good','Easy'].map((n,i)=>{const g=i+1;return '<button class="g'+g+'" data-a="g" data-g="'+g+'"><span>'+n+'</span><small>'+(g===1?'10m':fmt(sched(c,g).ivl))+'</small></button>'}).join('')+'</div>';
+  return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+q.length+' left</span></div>'+
+  (c.img?'<div class="card io"><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
+  '<div class="acts">'+acts+'<p class="meta hint">Space or Enter shows the answer. Keys 1 to 4 grade it: Again, Hard, Good, Easy.</p></div></div>';
+}
+
+function render(){
+  const st=view==='study',nav=$('#nav');
+  document.documentElement.dataset.theme=S.theme;
+  document.body.classList.toggle('rv',st);
+  nav.hidden=st;nav.innerHTML=st?'':navHTML();
+  $('#app').innerHTML=st?studyHTML():view==='io'?ioHTML():view==='decks'?decksHTML():view==='add'?addHTML():view==='settings'?settingsHTML():homeHTML();
+  if(view==='settings')refreshEst();
+}
+
+const app=$('#app');
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b){view=b.dataset.v;msg=null;render();scrollTo(0,0)}});
+app.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a,d=b.dataset.d,f=b.dataset.f;
+  if(a==='study')start(f,d);
+  else if(a==='del'){
+    const n=S.cards.filter(c=>c.folder===f&&c.deck===d).length;
+    if(await ask('Delete deck "'+d+'" and its '+plural(n,'card')+'? This cannot be undone.')){S.cards=S.cards.filter(c=>!(c.folder===f&&c.deck===d));prune();save();say('Deleted deck "'+d+'".')}
+  }
+  else if(a==='delf'){
+    const n=S.cards.filter(c=>c.folder===f).length;
+    if(await ask('Delete folder "'+f+'" with all its decks and '+plural(n,'card')+'? This cannot be undone.')){S.cards=S.cards.filter(c=>c.folder!==f);prune();save();say('Deleted folder "'+f+'".')}
+  }
+  else if(a==='fold'){if(openF.has(f))openF.delete(f);else openF.add(f);render()}
+  else if(a==='theme'){S.theme=isDark()?'light':'dark';save();render()}
+  else if(a==='th'){S.theme=b.dataset.t;save();render()}
+  else if(a==='tab'){view=b.dataset.v;msg=null;render();scrollTo(0,0)}
+  else if(a==='show'){sess.show=true;render()}
+  else if(a==='g')grade(+b.dataset.g);
+  else if(a==='import')doImport();
+  else if(a==='backup')backup();
+  else if(a==='iomake')makeIO();
+  else if(a==='ioundo'){io.boxes.pop();render()}
+  else if(a==='iocancel'){io=null;view='add';render()}
+});
+app.addEventListener('pointerdown',e=>{
+  const st=e.target.closest('#stage');
+  if(!st||view!=='io')return;
+  e.preventDefault();st.setPointerCapture(e.pointerId);
+  const r=st.getBoundingClientRect(),el=document.createElement('div');
+  el.className='m ed';st.appendChild(el);
+  drag={r,el,x:cl((e.clientX-r.left)/r.width),y:cl((e.clientY-r.top)/r.height)};
+});
+const rect=e=>{const x=cl((e.clientX-drag.r.left)/drag.r.width),y=cl((e.clientY-drag.r.top)/drag.r.height);return{x:Math.min(drag.x,x),y:Math.min(drag.y,y),w:Math.abs(x-drag.x),h:Math.abs(y-drag.y)}};
+app.addEventListener('pointermove',e=>{if(drag)drag.el.style.cssText=pos(rect(e))});
+app.addEventListener('pointerup',e=>{if(!drag)return;const b=rect(e);drag=null;if(b.w>.01&&b.h>.01)io.boxes.push(b);render()});
+app.addEventListener('pointercancel',()=>{drag=null;render()});
+app.addEventListener('input',e=>{
+  if(e.target.id==='deck')draft.deck=e.target.value;
+  else if(e.target.id==='paste')draft.paste=e.target.value;
+  else if(e.target.id==='iodeck'&&io)io.deck=e.target.value;
+  else if(e.target.id==='iofolder'&&io)io.folder=e.target.value;
+  else if(e.target.id==='folder')draft.folder=e.target.value;
+});
+app.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='limit'){const v=parseInt(t.value,10);if(v>=0){S.limit=v;save();render()}}
+  else if(t.id==='restore'&&t.files[0])restore(t.files[0]);
+  else if(t.id==='iofile'&&t.files[0])openIO(t.files[0]);
+});
+addEventListener('keydown',e=>{
+  if(view!=='study'||!sess.q.length||e.ctrlKey||e.metaKey||e.altKey)return;
+  const t=e.target,tag=t.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA')return;
+  if(!sess.show){
+    if(e.key===' '||e.key==='Enter'){
+      if(t.closest&&t.closest('button')&&t.dataset.a!=='show')return;
+      e.preventDefault();sess.show=true;render();
+    }
+  }else if(e.key.length===1&&'1234'.includes(e.key))grade(+e.key);
+});
+
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+load().catch(()=>{}).then(render);
+})();
+</script>
+</body>
+</html>
