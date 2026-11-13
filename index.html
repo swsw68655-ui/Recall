@@ -140,7 +140,7 @@ const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const num=(v,d)=>Number.isFinite(v)?v:d;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const fmt=d=>d<30?Math.round(d)+'d':d<365?Math.round(d/30)+'mo':(Math.round(d/36.5)/10)+'y';
+const fmt=d=>d<1?Math.round(d*24)+'h':d<30?Math.round(d)+'d':d<365?Math.round(d/30)+'mo':(Math.round(d/36.5)/10)+'y';
 const plural=(n,w)=>n+' '+w+(n===1?'':'s');
 
 function clean(o){
@@ -148,7 +148,7 @@ function clean(o){
   const cards=[];
   for(const c of o.cards){
     if(!c||typeof c.f!=='string'||typeof c.b!=='string')continue;
-    const x={id:String(c.id||uid()),folder:String(c.folder||'General'),deck:String(c.deck||'Default'),f:c.f,b:c.b,ease:num(c.ease,2.5),ivl:num(c.ivl,0),reps:num(c.reps,0),lapses:num(c.lapses,0),due:num(c.due,0),isNew:c.isNew!==false};
+    const x={id:String(c.id||uid()),folder:String(c.folder||'General'),deck:String(c.deck||'Default'),f:c.f,b:c.b,ease:num(c.ease,2.5),ivl:num(c.ivl,0),reps:num(c.reps,0),lapses:num(c.lapses,0),due:num(c.due,0),isNew:c.isNew!==false,st:['learn','review','relearn'].includes(c.st)?c.st:undefined,step:num(c.step,0)};
     if(typeof c.img==='string'&&Array.isArray(c.boxes)){x.img=c.img;x.k=num(c.k,0);x.boxes=c.boxes.filter(m=>m&&[m.x,m.y,m.w,m.h].every(Number.isFinite)).map(m=>({x:m.x,y:m.y,w:m.w,h:m.h}))}
     cards.push(x);
   }
@@ -244,25 +244,56 @@ function decks(){
   for(const c of S.cards){
     const k=c.folder+'|'+c.deck,d=m[k]||(m[k]={folder:c.folder,name:c.deck,nw:0,due:0,total:0});
     d.total++;
-    if(c.isNew)d.nw++;else if(c.due<=now)d.due++;
+    if(c.isNew)d.nw++;else if(isDue(c,now))d.due++;
   }
   return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
 }
 
-function sched(c,g){
-  const now=Date.now();
-  let e=c.ease,i=c.ivl,r=c.reps,l=c.lapses;
-  const gi=c.reps===0?1:c.reps===1?3:Math.max(c.ivl+1,Math.round(c.ivl*c.ease));
-  if(g===1){e=Math.max(1.3,e-.2);i=0;r=0;l++}
-  else if(g===2){e=Math.max(1.3,e-.15);i=Math.max(1,Math.round(c.ivl*1.2));r++}
-  else if(g===3){i=gi;r++}
-  else{i=c.reps===0?4:Math.max(gi+1,Math.round(c.ivl*c.ease*1.3));e+=.15;r++}
-  return{ease:+e.toFixed(2),ivl:i,reps:r,lapses:l,due:g===1?now+10*MIN:now+i*DAY,isNew:false};
+const STEPS=[1,10],RSTEPS=[10],GRAD=1,EASYI=4,HARDF=1.2,EBONUS=1.3,LAHEAD=20*MIN;
+const stOf=c=>c.isNew?'new':(c.st||(c.ivl>=1?'review':'learn'));
+const cons=(v,prev)=>Math.max(1,Math.round(v),prev+1);
+function fuzz(i){
+  if(i<2)return i;
+  if(i===2)return 2+Math.floor(Math.random()*2);
+  const f=Math.max(1,Math.round(i*(i<7?.25:i<30?.15:.05)));
+  return Math.max(2,Math.round(i)-f+Math.floor(Math.random()*(2*f+1)));
 }
+const isDue=(c,now)=>c.due<=now+(stOf(c)==='review'?0:LAHEAD);
+// Anki (SM-2 style) scheduler. fz=true adds random fuzz when really grading.
+function sched(c,g,fz){
+  const now=Date.now(),st=stOf(c);
+  let e=c.ease,i=c.ivl,l=c.lapses,s=c.step||0,ns,wait;
+  if(st==='review'){
+    const I=Math.max(1,Math.round(c.ivl)),late=Math.max(0,Math.floor((now-c.due)/DAY));
+    if(g===1){l++;e=Math.max(1.3,e-.2);i=1;ns='relearn';s=0;wait=RSTEPS[0]*MIN}
+    else{
+      const h=cons((I+Math.floor(late/4))*HARDF,I),gd=cons((I+Math.floor(late/2))*e,h),ez=cons((I+late)*e*EBONUS,gd);
+      if(g===2){e=Math.max(1.3,e-.15);i=h}else if(g===3)i=gd;else{i=ez;e+=.15}
+      if(fz)i=fuzz(i);
+      ns='review';wait=i*DAY;
+    }
+  }else{
+    const steps=st==='relearn'?RSTEPS:STEPS;
+    s=Math.min(s,steps.length-1);ns=st==='new'?'learn':st;
+    const grad=iv=>{i=iv;ns='review';wait=iv*DAY};
+    if(g===1){s=0;wait=steps[0]*MIN}
+    else if(g===2){
+      const m=steps.length===1?steps[0]*1.5:s===0?(steps[0]+steps[1])/2:steps[s];
+      wait=Math.round(m)*MIN;
+    }
+    else if(g===3){
+      if(s+1<steps.length){s++;wait=steps[s]*MIN}
+      else grad(st==='relearn'?Math.max(1,c.ivl):GRAD);
+    }
+    else grad(st==='relearn'?Math.max(1,c.ivl)+1:EASYI);
+  }
+  return{ease:+e.toFixed(2),ivl:i,reps:c.reps+(g>1?1:0),lapses:l,due:now+wait,isNew:false,st:ns,step:s,wait};
+}
+const lab=ms=>{const m=Math.round(ms/MIN);if(m<60)return m+'m';const h=Math.round(ms/36e5);return h<24?h+'h':fmt(ms/DAY)};
 
 function start(f,d){
   const now=Date.now();
-  const rev=S.cards.filter(c=>(!f||c.folder===f)&&(!d||c.deck===d)&&!c.isNew&&c.due<=now).sort((a,b)=>a.due-b.due);
+  const rev=S.cards.filter(c=>(!f||c.folder===f)&&(!d||c.deck===d)&&!c.isNew&&isDue(c,now)).sort((a,b)=>a.due-b.due);
   const nw=S.cards.filter(c=>(!f||c.folder===f)&&(!d||c.deck===d)&&c.isNew).slice(0,remNew());
   sess={f,d,q:[...rev,...nw].map(c=>c.id),done:0,show:false};
   view='study';msg=null;render();
@@ -272,10 +303,10 @@ function grade(g){
   if(c){
     const k=today(),L=S.log[k]||(S.log[k]={n:0,r:0});
     if(c.isNew)L.n++;else L.r++;
-    Object.assign(c,sched(c,g));
+    Object.assign(c,sched(c,g,true));delete c.wait;
   }
   sess.q.shift();
-  if(g===1&&c)sess.q.push(id);
+  if(c&&c.st!=='review')sess.q.push(id);
   sess.done++;sess.show=false;
   save();render();
 }
@@ -474,7 +505,7 @@ function studyHTML(){
   const pct=Math.round(100*sess.done/(sess.done+q.length));
   let acts;
   if(!sess.show)acts='<p class="meta hint2">Tap the card to show the answer</p>';
-  else acts='<div class="grades">'+['Again','Hard','Good','Easy'].map((n,i)=>{const g=i+1;return '<button class="g'+g+'" data-a="g" data-g="'+g+'"><span>'+n+'</span><small>'+(g===1?'10m':fmt(sched(c,g).ivl))+'</small></button>'}).join('')+'</div>';
+  else acts='<div class="grades">'+['Again','Hard','Good','Easy'].map((n,i)=>{const g=i+1;return '<button class="g'+g+'" data-a="g" data-g="'+g+'"><span>'+n+'</span><small>'+lab(sched(c,g).wait)+'</small></button>'}).join('')+'</div>';
   return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+q.length+' left</span></div>'+
   (c.img?'<div class="card io"'+(sess.show?'':' data-a="show"')+'><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"'+(sess.show?'':' data-a="show"')+'><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
   '<div class="acts">'+acts+'<p class="meta hint">Space, Enter or a click on the card shows the answer. Keys 1 to 4 grade it: Again, Hard, Good, Easy.</p></div></div>';
