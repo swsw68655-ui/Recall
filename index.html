@@ -25,6 +25,10 @@ p{margin:6px 0}
 .meta{color:var(--mut);font-size:.9rem}
 main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 104px max(16px,env(safe-area-inset-left))}
 .rv main{max-width:none;padding:12px max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}
+.cr{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--bd)}
+.ct{flex:1;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}.cf{font-weight:600}.cb{color:var(--mut);margin-top:4px}
+.cm{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.cth{max-width:140px;max-height:90px;border-radius:8px;display:block;margin-top:6px}
+.grades.c2{grid-template-columns:1fr 1fr}
 .hint2{text-align:center;margin:0;min-height:64px;display:flex;align-items:center;justify-content:center}
 .card[data-a=show]{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .rv .card{font-size:clamp(1.4rem,3.2vw,2.4rem);padding:32px clamp(20px,5vw,64px)}
@@ -138,7 +142,7 @@ textarea{min-height:130px;resize:vertical}
 (()=>{
 'use strict';
 const KEY='recall.v1',MIN=6e4,DAY=864e5;
-let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null,imgScroll=false;try{imgScroll=localStorage.getItem('recall.imgscroll')==='1'}catch(e){}
+let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null,imgScroll=false,br=null,cu=null;try{imgScroll=localStorage.getItem('recall.imgscroll')==='1'}catch(e){}
 const draft={folder:'',deck:'',paste:''};
 const $=s=>document.querySelector(s);
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -304,14 +308,15 @@ function start(f,d){
   view='study';msg=null;render();
 }
 function grade(g){
+  if(sess.cram)g=g===1?1:3;
   const id=sess.q[0],c=S.cards.find(x=>x.id===id);
   if(c){
     const k=today(),L=S.log[k]||(S.log[k]={n:0,r:0});
-    if(c.isNew)L.n++;else L.r++;
-    Object.assign(c,sched(c,g,true));delete c.wait;
+    if(!sess.cram){if(c.isNew)L.n++;else L.r++}
+    if(!sess.cram)Object.assign(c,sched(c,g,true));
   }
   sess.q.shift();
-  if(c&&c.st!=='review')sess.q.push(id);
+  if(c&&(sess.cram?g===1:c.st!=='review'))sess.q.push(id);
   sess.done++;sess.show=false;
   save();render();scrollTo(0,0);
 }
@@ -424,7 +429,7 @@ const TABS=[['home','Home'],['decks','Study'],['add','Add cards'],['settings','S
 const isDark=()=>S.theme==='dark'||(S.theme==='auto'&&!!window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
 let openF=null;
 function navHTML(){
-  const cur=view==='io'?'add':view;
+  const cur=view==='io'?'add':(view==='browse'||view==='custom')?'decks':view;
   return '<div class="nav-in"><span class="brand">Recall</span>'+TABS.map(t=>'<button class="tab" data-v="'+t[0]+'"'+(cur===t[0]?' aria-current="page"':'')+'>'+svg(ICON[t[0]])+'<span>'+t[1]+'</span></button>').join('')+'</div>';
 }
 const statusHTML=()=>msg?'<p class="status'+(msg.err?' err':'')+'" role="status">'+esc(msg.t)+'</p>':'';
@@ -468,6 +473,50 @@ function homeHTML(){
   return head('Today',new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}))+warnHTML()+statusHTML()+hr+more;
 }
 
+const inScope=(c,sc)=>(!sc.f||c.folder===sc.f)&&(!sc.d||c.deck===sc.d);
+const scopeName=sc=>sc.d?sc.f+' / '+sc.d:sc.f;
+const backBtn='<div class="row" style="margin:0 0 8px"><button class="ghost" data-a="tab" data-v="decks">&larr; Decks</button></div>';
+function startList(ids,cram){sess={q:ids,done:0,show:false,cram:!!cram};view='study';msg=null;render();scrollTo(0,0)}
+function stText(c,now){
+  const st=stOf(c);
+  if(st==='new')return 'New';
+  if(st!=='review')return 'Learning';
+  return c.due<=now?'Due now':'Due in '+fmt((c.due-now)/DAY);
+}
+function brList(){
+  const ql=br.q.trim().toLowerCase(),now=Date.now();
+  const all=S.cards.filter(c=>inScope(c,br)&&(!ql||(c.f+' '+c.b).toLowerCase().includes(ql)));
+  const rows=all.slice(0,200).map(c=>'<div class="cr"><div class="ct"><div class="cf">'+esc(c.f)+'</div>'+(c.img?'<img class="cth" src="'+S.imgs[c.img]+'" alt="">':'<div class="cb">'+esc(c.b)+'</div>')+'</div><div class="cm"><span class="chip">'+stText(c,now)+'</span>'+(c.lapses?'<span class="meta">'+plural(c.lapses,'lapse')+'</span>':'')+'<button class="ghost danger" data-a="delc" data-id="'+esc(c.id)+'" aria-label="Delete this card">Delete</button></div></div>').join('');
+  return (rows||'<p class="meta">No cards found.</p>')+(all.length>200?'<p class="meta">Showing the first 200 of '+all.length+'. Use search to narrow it down.</p>':'');
+}
+function browseHTML(){
+  const n=S.cards.filter(c=>inScope(c,br)).length;
+  return backBtn+head('Cards',esc(scopeName(br))+' &middot; '+plural(n,'card'))+
+  '<section class="panel"><label class="f" for="brq" style="margin-top:0">Search</label><input type="text" id="brq" autocomplete="off" placeholder="Search front or back" value="'+esc(br.q)+'"><div id="brlist">'+brList()+'</div></section>';
+}
+function cuIds(){
+  const now=Date.now(),n=Math.max(0,parseInt(cu.n[cu.mode],10)||0),l=S.cards.filter(c=>inScope(c,cu));
+  if(cu.mode==='ahead')return l.filter(c=>!c.isNew&&!isDue(c,now)&&c.due<=now+n*DAY).sort((a,b)=>a.due-b.due).map(c=>c.id);
+  if(cu.mode==='new')return l.filter(c=>c.isNew).slice(0,n).map(c=>c.id);
+  if(cu.mode==='lapsed')return l.filter(c=>!c.isNew&&c.lapses>0).map(c=>c.id);
+  const a=l.map(c=>c.id);
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+  return a.slice(0,n);
+}
+const CU={ahead:['Review ahead','Study review cards that are due in the next few days. Normal scheduling applies.','days'],new:['Extra new cards','Study more new cards than your daily limit.','new cards'],lapsed:['Lapsed cards','Cards you have forgotten at least once.',''],cram:['Cram','Random cards from the deck. Your schedule does not change.','cards']};
+function cuSum(){
+  const k=cuIds().length;
+  return '<p class="meta">'+plural(k,'card')+' match.</p><div class="row"><button class="primary" data-a="cgo"'+(k?'':' disabled')+'>Study '+plural(k,'card')+'</button></div>';
+}
+function customHTML(){
+  const m=cu.mode,info=CU[m];
+  return backBtn+head('Custom study',esc(scopeName(cu)))+
+  '<section class="panel"><div class="row" style="margin-top:0">'+Object.keys(CU).map(k=>'<button data-a="cmode" data-m="'+k+'" aria-pressed="'+(k===m)+'">'+CU[k][0]+'</button>').join('')+'</div>'+
+  '<p class="meta">'+info[1]+'</p>'+
+  (info[2]?'<label class="f" for="cun">'+(m==='ahead'?'Days ahead':'How many '+info[2])+'</label><input type="number" id="cun" min="1" max="9999" inputmode="numeric" value="'+esc(cu.n[m])+'">':'')+
+  '<div id="cusum">'+cuSum()+'</div></section>';
+}
+
 function decksHTML(){
   const t=tree(),rn=remNew(),s=stats(),tot=s.due+s.nw;
   if(!openF)openF=new Set(t.length<=2?t.map(f=>f.name):[]);
@@ -475,7 +524,7 @@ function decksHTML(){
   const rows=t.map((f,i)=>{
     const o=openF.has(f.name),fe=esc(f.name);
     return '<section class="panel"><div class="frow"><button class="fh" data-a="fold" data-f="'+fe+'" aria-expanded="'+o+'"><span class="ft b'+(i%6)+'">'+svg(ICON.folder)+'</span><span class="fn"><strong>'+fe+'</strong><span class="meta">'+plural(f.decks.length,'deck')+', '+plural(f.total,'card')+'</span></span><span class="chev'+(o?' open':'')+'">'+svg(ICON.chev)+'</span></button><button class="primary" data-a="study" data-f="'+fe+'">Study</button></div>'+chips(Math.min(f.nw,rn),f.due)+
-    (o?'<div class="dl">'+f.decks.map(d=>'<div class="dr"><div class="n"><strong>'+esc(d.name)+'</strong>'+chips(Math.min(d.nw,rn),d.due)+'</div><div class="row"><button data-a="study" data-f="'+fe+'" data-d="'+esc(d.name)+'">Study</button><button class="ghost danger" data-a="del" data-f="'+fe+'" data-d="'+esc(d.name)+'" aria-label="Delete deck '+esc(d.name)+'">Delete</button></div></div>').join('')+'<div class="row"><button class="ghost danger" data-a="delf" data-f="'+fe+'">Delete folder</button></div></div>':'')+'</section>';
+    (o?'<div class="dl">'+f.decks.map(d=>'<div class="dr"><div class="n"><strong>'+esc(d.name)+'</strong>'+chips(Math.min(d.nw,rn),d.due)+'</div><div class="row"><button data-a="study" data-f="'+fe+'" data-d="'+esc(d.name)+'">Study</button><button data-a="browse" data-f="'+fe+'" data-d="'+esc(d.name)+'">Cards</button><button data-a="custom" data-f="'+fe+'" data-d="'+esc(d.name)+'">Custom</button><button class="ghost danger" data-a="del" data-f="'+fe+'" data-d="'+esc(d.name)+'" aria-label="Delete deck '+esc(d.name)+'">Delete</button></div></div>').join('')+'<div class="row"><button data-a="browse" data-f="'+fe+'">Cards</button><button data-a="custom" data-f="'+fe+'">Custom study</button><button class="ghost danger" data-a="delf" data-f="'+fe+'">Delete folder</button></div></div>':'')+'</section>';
   }).join('');
   return head('Study',t.length?'Open a folder to see its decks.':'')+warnHTML()+statusHTML()+
   (t.length&&tot?'<div class="panel hero b5"><div><h2>All folders</h2><p class="meta" style="color:inherit">'+plural(tot,'card')+' ready</p></div><button class="primary" data-a="study">Study all</button></div>':'')+
@@ -509,7 +558,8 @@ function studyHTML(){
   if(!c)return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">'+(sess.done?'Session complete. You reviewed '+plural(sess.done,'card')+'.':'Nothing is due right now. Come back later or raise your daily new-card limit.')+'</div></div><div class="acts"><button class="primary" data-a="tab" data-v="decks">Back to decks</button></div></div>';
   const pct=Math.round(100*sess.done/(sess.done+q.length));
   let acts;
-  if(!sess.show)acts='<p class="meta hint2">Tap the card to show the answer</p>';
+  if(!sess.show)acts='<p class="meta hint2">Tap the card to show the answer'+(sess.cram?' · schedule unchanged':'')+'</p>';
+  else if(sess.cram)acts='<div class="grades c2"><button class="g1" data-a="g" data-g="1"><span>Again</span><small>later</small></button><button class="g3" data-a="g" data-g="3"><span>Got it</span><small>done</small></button></div>';
   else acts='<div class="grades">'+['Again','Hard','Good','Easy'].map((n,i)=>{const g=i+1;return '<button class="g'+g+'" data-a="g" data-g="'+g+'"><span>'+n+'</span><small>'+lab(sched(c,g).wait)+'</small></button>'}).join('')+'</div>';
   return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+q.length+' left</span>'+(c.img?'<button class="ghost" data-a="imgfit">'+(imgScroll?'Fit screen':'Scroll')+'</button>':'')+'</div>'+
   (c.img?'<div class="card io'+(imgScroll?' sc':'')+'"'+(sess.show?'':' data-a="show"')+'><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"'+(sess.show?'':' data-a="show"')+'><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
@@ -521,7 +571,7 @@ function render(){
   document.documentElement.dataset.theme=S.theme;
   document.body.classList.toggle('rv',st);
   nav.hidden=st;nav.innerHTML=st?'':navHTML();
-  $('#app').innerHTML=st?studyHTML():view==='io'?ioHTML():view==='decks'?decksHTML():view==='add'?addHTML():view==='settings'?settingsHTML():homeHTML();
+  $('#app').innerHTML=st?studyHTML():view==='io'?ioHTML():view==='browse'?browseHTML():view==='custom'?customHTML():view==='decks'?decksHTML():view==='add'?addHTML():view==='settings'?settingsHTML():homeHTML();
   if(view==='settings')refreshEst();
 }
 
@@ -538,6 +588,13 @@ app.addEventListener('click',async e=>{
   else if(a==='delf'){
     const n=S.cards.filter(c=>c.folder===f).length;
     if(await ask('Delete folder "'+f+'" with all its decks and '+plural(n,'card')+'? This cannot be undone.')){S.cards=S.cards.filter(c=>c.folder!==f);prune();save();say('Deleted folder "'+f+'".')}
+  }
+  else if(a==='browse'){br={f,d,q:''};view='browse';msg=null;render();scrollTo(0,0)}
+  else if(a==='custom'){cu={f,d,mode:'ahead',n:{ahead:1,new:10,cram:50}};view='custom';msg=null;render();scrollTo(0,0)}
+  else if(a==='cmode'){cu.mode=b.dataset.m;render()}
+  else if(a==='cgo'){const ids=cuIds();if(ids.length)startList(ids,cu.mode==='cram')}
+  else if(a==='delc'){
+    if(await ask('Delete this card? This cannot be undone.')){S.cards=S.cards.filter(c=>c.id!==b.dataset.id);prune();save();render()}
   }
   else if(a==='fold'){if(openF.has(f))openF.delete(f);else openF.add(f);render()}
   else if(a==='theme'){S.theme=isDark()?'light':'dark';save();render()}
@@ -565,7 +622,9 @@ app.addEventListener('pointermove',e=>{if(drag)drag.el.style.cssText=pos(rect(e)
 app.addEventListener('pointerup',e=>{if(!drag)return;const b=rect(e);drag=null;if(b.w>.01&&b.h>.01)io.boxes.push(b);render()});
 app.addEventListener('pointercancel',()=>{drag=null;render()});
 app.addEventListener('input',e=>{
-  if(e.target.id==='deck')draft.deck=e.target.value;
+  if(e.target.id==='brq'&&br){br.q=e.target.value;$('#brlist').innerHTML=brList()}
+  else if(e.target.id==='cun'&&cu){cu.n[cu.mode]=e.target.value;$('#cusum').innerHTML=cuSum()}
+  else if(e.target.id==='deck')draft.deck=e.target.value;
   else if(e.target.id==='paste')draft.paste=e.target.value;
   else if(e.target.id==='iodeck'&&io)io.deck=e.target.value;
   else if(e.target.id==='iofolder'&&io)io.folder=e.target.value;
