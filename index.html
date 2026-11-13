@@ -24,7 +24,11 @@ h2{font-size:1.1rem;line-height:1.3;margin:0 0 4px}
 p{margin:6px 0}
 .meta{color:var(--mut);font-size:.9rem}
 main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 104px max(16px,env(safe-area-inset-left))}
-.rv main{padding-bottom:0}
+.rv main{max-width:none;padding:12px max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}
+.hint2{text-align:center;margin:0;min-height:64px;display:flex;align-items:center;justify-content:center}
+.card[data-a=show]{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rv .card{font-size:clamp(1.4rem,3.2vw,2.4rem);padding:32px clamp(20px,5vw,64px)}
+.rv .card.io{padding:8px}
 .ph{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 0 20px}
 .ibtn{width:44px;padding:0;border:0;border-radius:50%;background:var(--card);color:var(--ac)}
 #nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom)}
@@ -469,11 +473,11 @@ function studyHTML(){
   if(!c)return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">'+(sess.done?'Session complete. You reviewed '+plural(sess.done,'card')+'.':'Nothing is due right now. Come back later or raise your daily new-card limit.')+'</div></div><div class="acts"><button class="primary" data-a="tab" data-v="decks">Back to decks</button></div></div>';
   const pct=Math.round(100*sess.done/(sess.done+q.length));
   let acts;
-  if(!sess.show)acts='<button class="primary" data-a="show">Show answer</button>';
+  if(!sess.show)acts='<p class="meta hint2">Tap the card to show the answer</p>';
   else acts='<div class="grades">'+['Again','Hard','Good','Easy'].map((n,i)=>{const g=i+1;return '<button class="g'+g+'" data-a="g" data-g="'+g+'"><span>'+n+'</span><small>'+(g===1?'10m':fmt(sched(c,g).ivl))+'</small></button>'}).join('')+'</div>';
   return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+q.length+' left</span></div>'+
-  (c.img?'<div class="card io"><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
-  '<div class="acts">'+acts+'<p class="meta hint">Space or Enter shows the answer. Keys 1 to 4 grade it: Again, Hard, Good, Easy.</p></div></div>';
+  (c.img?'<div class="card io"'+(sess.show?'':' data-a="show"')+'><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"'+(sess.show?'':' data-a="show"')+'><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
+  '<div class="acts">'+acts+'<p class="meta hint">Space, Enter or a click on the card shows the answer. Keys 1 to 4 grade it: Again, Hard, Good, Easy.</p></div></div>';
 }
 
 function render(){
