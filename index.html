@@ -28,7 +28,12 @@ main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-rig
 .hint2{text-align:center;margin:0;min-height:64px;display:flex;align-items:center;justify-content:center}
 .card[data-a=show]{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .rv .card{font-size:clamp(1.4rem,3.2vw,2.4rem);padding:32px clamp(20px,5vw,64px)}
-.rv .card.io{padding:8px}
+.rv .card.io{padding:8px;align-items:center;justify-content:center}
+.rv .card.io .stage{width:fit-content;max-width:100%;touch-action:pan-y}
+.rv .card.io.sc{justify-content:flex-start}
+.rv .card.io.sc .stage{width:100%}
+.rv .card.io.sc .stage img{width:100%;max-height:none}
+.rv .card.io .stage img{width:auto;max-width:100%;height:auto;max-height:calc(100vh - 250px);max-height:calc(100dvh - 250px)}
 .ph{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 0 20px}
 .ibtn{width:44px;padding:0;border:0;border-radius:50%;background:var(--card);color:var(--ac)}
 #nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom)}
@@ -133,7 +138,7 @@ textarea{min-height:130px;resize:vertical}
 (()=>{
 'use strict';
 const KEY='recall.v1',MIN=6e4,DAY=864e5;
-let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null;
+let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null,imgScroll=false;try{imgScroll=localStorage.getItem('recall.imgscroll')==='1'}catch(e){}
 const draft={folder:'',deck:'',paste:''};
 const $=s=>document.querySelector(s);
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -308,7 +313,7 @@ function grade(g){
   sess.q.shift();
   if(c&&c.st!=='review')sess.q.push(id);
   sess.done++;sess.show=false;
-  save();render();
+  save();render();scrollTo(0,0);
 }
 
 function parse(t){
@@ -506,8 +511,8 @@ function studyHTML(){
   let acts;
   if(!sess.show)acts='<p class="meta hint2">Tap the card to show the answer</p>';
   else acts='<div class="grades">'+['Again','Hard','Good','Easy'].map((n,i)=>{const g=i+1;return '<button class="g'+g+'" data-a="g" data-g="'+g+'"><span>'+n+'</span><small>'+lab(sched(c,g).wait)+'</small></button>'}).join('')+'</div>';
-  return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+q.length+' left</span></div>'+
-  (c.img?'<div class="card io"'+(sess.show?'':' data-a="show"')+'><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"'+(sess.show?'':' data-a="show"')+'><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
+  return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+q.length+' left</span>'+(c.img?'<button class="ghost" data-a="imgfit">'+(imgScroll?'Fit screen':'Scroll')+'</button>':'')+'</div>'+
+  (c.img?'<div class="card io'+(imgScroll?' sc':'')+'"'+(sess.show?'':' data-a="show"')+'><div class="stage"><img src="'+S.imgs[c.img]+'" alt="Image with hidden labels">'+c.boxes.map((b,i)=>'<div class="m'+(i===c.k?(sess.show?' rev':' t'):'')+'" style="'+pos(b)+'">'+(i===c.k&&!sess.show?'?':'')+'</div>').join('')+'</div></div><p class="meta">Recall the label under the highlighted cover.</p>':'<div class="card"'+(sess.show?'':' data-a="show"')+'><div class="f1">'+esc(c.f)+'</div>'+(sess.show?'<div class="ans">'+esc(c.b)+'</div>':'')+'</div>')+
   '<div class="acts">'+acts+'<p class="meta hint">Space, Enter or a click on the card shows the answer. Keys 1 to 4 grade it: Again, Hard, Good, Easy.</p></div></div>';
 }
 
@@ -539,6 +544,7 @@ app.addEventListener('click',async e=>{
   else if(a==='th'){S.theme=b.dataset.t;save();render()}
   else if(a==='tab'){view=b.dataset.v;msg=null;render();scrollTo(0,0)}
   else if(a==='show'){sess.show=true;render()}
+  else if(a==='imgfit'){imgScroll=!imgScroll;try{localStorage.setItem('recall.imgscroll',imgScroll?'1':'0')}catch(e){}render()}
   else if(a==='g')grade(+b.dataset.g);
   else if(a==='import')doImport();
   else if(a==='backup')backup();
