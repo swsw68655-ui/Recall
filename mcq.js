@@ -6,9 +6,9 @@ const R={esc:t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  ask:async t=>confirm(t),
  get view(){return on?'mcq':''},
  render:()=>paint()},K='recall.mcq.v1',L='ABCDE',esc=R.esc,$=s=>document.querySelector(s);
+const numb=t=>{const l=String(t).split('\n');if(l.filter(x=>/^\s*[*•\-–]\s+/.test(x)).length<2)return t;let k=0;return l.map(x=>/^\s*[*•\-–]\s+/.test(x)?(++k)+'. '+x.replace(/^\s*[*•\-–]\s+/,''):x).join('\n')};
 let Q=[],qs=null,ed=null,msg=null,cfg={f:'',d:'',m:'todo',n:20,bf:'',bd:'',bp:''},open=new Set(),opened=false;
 try{Q=JSON.parse(localStorage.getItem(K)||'[]').filter(q=>q&&q.s&&Array.isArray(q.o)&&Array.isArray(q.a)).map(q=>Object.assign({id:Math.random().toString(36).slice(2),f:'General',d:'General',e:'',src:'',n:0,r:0,last:null},q)).map(q=>{q.s=numb(q.s);return q})}catch(e){}
-const numb=t=>{const l=String(t).split('\n');if(l.filter(x=>/^\s*[*•\-–]\s+/.test(x)).length<2)return t;let k=0;return l.map(x=>/^\s*[*•\-–]\s+/.test(x)?(++k)+'. '+x.replace(/^\s*[*•\-–]\s+/,''):x).join('\n')};
 const sv=()=>{try{localStorage.setItem(K,JSON.stringify(Q))}catch(e){msg={t:'Could not save: this browser is blocking storage.',e:1}}};
 const say=(t,e)=>{msg={t,e};R.render()};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
