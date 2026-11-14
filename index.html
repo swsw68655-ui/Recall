@@ -25,6 +25,11 @@ p{margin:6px 0}
 .meta{color:var(--mut);font-size:.9rem}
 main{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 104px max(16px,env(safe-area-inset-left))}
 .rv main{max-width:none;padding:12px max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}
+.more{position:relative}
+.dots{width:44px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.mnu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:170px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:2px}
+.mnu button{border:0;background:none;text-align:left;justify-content:flex-start;width:100%;min-height:44px;padding:0 14px}
+.mnu button:hover{background:var(--acs)}
 .cr{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--bd)}
 .ct{flex:1;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}.cf{font-weight:600}.cb{color:var(--mut);margin-top:4px}
 .cm{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.cth{max-width:140px;max-height:90px;border-radius:8px;display:block;margin-top:6px}
@@ -142,7 +147,7 @@ textarea{min-height:130px;resize:vertical}
 (()=>{
 'use strict';
 const KEY='recall.v1',MIN=6e4,DAY=864e5;
-let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null,imgScroll=false,br=null,cu=null;try{imgScroll=localStorage.getItem('recall.imgscroll')==='1'}catch(e){}
+let S={cards:[],limit:20,log:{},imgs:{},theme:'auto'},storeOK=true,view='home',sess=null,msg=null,imgScroll=false,br=null,cu=null,menu=null;try{imgScroll=localStorage.getItem('recall.imgscroll')==='1'}catch(e){}
 const draft={folder:'',deck:'',paste:''};
 const $=s=>document.querySelector(s);
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -524,7 +529,7 @@ function decksHTML(){
   const rows=t.map((f,i)=>{
     const o=openF.has(f.name),fe=esc(f.name);
     return '<section class="panel"><div class="frow"><button class="fh" data-a="fold" data-f="'+fe+'" aria-expanded="'+o+'"><span class="ft b'+(i%6)+'">'+svg(ICON.folder)+'</span><span class="fn"><strong>'+fe+'</strong><span class="meta">'+plural(f.decks.length,'deck')+', '+plural(f.total,'card')+'</span></span><span class="chev'+(o?' open':'')+'">'+svg(ICON.chev)+'</span></button><button class="primary" data-a="study" data-f="'+fe+'">Study</button></div>'+chips(Math.min(f.nw,rn),f.due)+
-    (o?'<div class="dl">'+f.decks.map(d=>'<div class="dr"><div class="n"><strong>'+esc(d.name)+'</strong>'+chips(Math.min(d.nw,rn),d.due)+'</div><div class="row"><button data-a="study" data-f="'+fe+'" data-d="'+esc(d.name)+'">Study</button><button data-a="browse" data-f="'+fe+'" data-d="'+esc(d.name)+'">Cards</button><button data-a="custom" data-f="'+fe+'" data-d="'+esc(d.name)+'">Custom</button><button class="ghost danger" data-a="del" data-f="'+fe+'" data-d="'+esc(d.name)+'" aria-label="Delete deck '+esc(d.name)+'">Delete</button></div></div>').join('')+'<div class="row"><button data-a="browse" data-f="'+fe+'">Cards</button><button data-a="custom" data-f="'+fe+'">Custom study</button><button class="ghost danger" data-a="delf" data-f="'+fe+'">Delete folder</button></div></div>':'')+'</section>';
+    (o?'<div class="dl">'+f.decks.map(d=>'<div class="dr"><div class="n"><strong>'+esc(d.name)+'</strong>'+chips(Math.min(d.nw,rn),d.due)+'</div><div class="row"><button data-a="study" data-f="'+fe+'" data-d="'+esc(d.name)+'">Study</button><div class="more"><button class="dots" data-a="menu" data-f="'+fe+'" data-d="'+esc(d.name)+'" aria-label="More actions for '+esc(d.name)+'" aria-haspopup="menu" aria-expanded="'+(menu===f.name+'\u0001'+d.name)+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>'+(menu===f.name+'\u0001'+d.name?'<div class="mnu" role="menu"><button role="menuitem" data-a="browse" data-f="'+fe+'" data-d="'+esc(d.name)+'">Cards</button><button role="menuitem" data-a="custom" data-f="'+fe+'" data-d="'+esc(d.name)+'">Custom study</button><button role="menuitem" class="danger" data-a="del" data-f="'+fe+'" data-d="'+esc(d.name)+'">Delete deck</button></div>':'')+'</div></div></div>').join('')+'<div class="row"><button data-a="browse" data-f="'+fe+'">Cards</button><button data-a="custom" data-f="'+fe+'">Custom study</button><button class="ghost danger" data-a="delf" data-f="'+fe+'">Delete folder</button></div></div>':'')+'</section>';
   }).join('');
   return head('Study',t.length?'Open a folder to see its decks.':'')+warnHTML()+statusHTML()+
   (t.length&&tot?'<div class="panel hero b5"><div><h2>All folders</h2><p class="meta" style="color:inherit">'+plural(tot,'card')+' ready</p></div><button class="primary" data-a="study">Study all</button></div>':'')+
@@ -576,10 +581,14 @@ function render(){
 }
 
 const app=$('#app');
+addEventListener('keydown',e=>{if(e.key==='Escape'&&menu){menu=null;render()}});
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b){view=b.dataset.v;msg=null;render();scrollTo(0,0)}});
 app.addEventListener('click',async e=>{
-  const b=e.target.closest('[data-a]');if(!b)return;
+  const b=e.target.closest('[data-a]');
+  if(!b){if(menu){menu=null;render()}return}
   const a=b.dataset.a,d=b.dataset.d,f=b.dataset.f;
+  if(a==='menu'){const k=f+'\u0001'+d;menu=menu===k?null:k;render();return}
+  if(menu){menu=null;render()}
   if(a==='study')start(f,d);
   else if(a==='del'){
     const n=S.cards.filter(c=>c.folder===f&&c.deck===d).length;
