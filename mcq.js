@@ -22,7 +22,7 @@ const cur=()=>qs&&Q.find(x=>x.id===qs.ids[qs.i]);
 const same=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
 const blank=(f,d,s)=>({id:null,f:f||cfg.f||'',d:d||cfg.d||'',src:s||'',s:'',o:['','','','',''],a:[],e:''});
 const st=document.createElement('style');
-st.textContent='.qo{display:flex;gap:10px;align-items:flex-start;justify-content:flex-start;width:100%;height:auto;min-height:48px;padding:10px 14px;margin:0 0 8px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}.qo b{flex:none;width:1.4em}.qo.sel{border-color:var(--pr);background:var(--acs)}.qo.ok{background:var(--p0);border-color:var(--c3)}.qo.no{background:var(--p1);border-color:var(--c1)}.qo.miss{border:2px dashed var(--c3)}.qx{margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);white-space:pre-wrap;overflow-wrap:anywhere}.qs{font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.1rem}select{width:100%;min-height:44px;padding:0 12px;border:1px solid var(--bd);border-radius:14px;background:var(--fld);color:var(--tx);font:inherit}.qf{display:flex;gap:8px;align-items:center;margin-bottom:8px}.qf input{flex:1;min-width:0}';
+st.textContent='.qo{display:flex;gap:10px;align-items:flex-start;justify-content:flex-start;width:100%;height:auto;min-height:48px;padding:10px 14px;margin:0 0 8px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}.qo b{flex:none;width:1.4em}.qo.sel{border-color:var(--pr);background:var(--acs)}.qo.ok{background:var(--p0);border-color:var(--c3)}.qo.no{background:var(--p1);border-color:var(--c1)}.qo.miss{border:2px dashed var(--c3)}.qr{display:flex;gap:8px;align-items:stretch;margin:0 0 8px}.qr .qo{flex:1;min-width:0;margin:0}.qe{flex:none;width:48px;padding:0;height:auto}.qo.out{opacity:.45;text-decoration:line-through}.qx{margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);white-space:pre-wrap;overflow-wrap:anywhere}.qs{font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.1rem}select{width:100%;min-height:44px;padding:0 12px;border:1px solid var(--bd);border-radius:14px;background:var(--fld);color:var(--tx);font:inherit}.qf{display:flex;gap:8px;align-items:center;margin-bottom:8px}.qf input{flex:1;min-width:0}';
 document.head.appendChild(st);
 
 function parse(t){
@@ -108,6 +108,7 @@ function form(){
  ed.o.map((t,i)=>'<div class="qf"><b>'+L[i]+'</b><input type="text" id="fo'+i+'" autocomplete="off" aria-label="Option '+L[i]+'" value="'+esc(t)+'"><button data-q="tg" data-i="'+i+'" aria-pressed="'+ed.a.includes(i)+'" aria-label="Option '+L[i]+' is correct">Correct</button></div>').join('')+
  '<label class="f" for="fe">Explanation (optional)</label><textarea id="fe">'+esc(ed.e)+'</textarea><div class="row"><button class="primary" data-q="save">Save question</button><button data-q="cancel">Cancel</button></div></section>';
 }
+const EYE='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.9 4.2A10 10 0 0 1 12 4c6 0 10 8 10 8a17 17 0 0 1-2.6 3.6M6.6 6.6A17 17 0 0 0 2 12s4 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><path d="m2 2 20 20"/></svg>';
 function run(){
  const q=cur();if(!q)return fin();
  const done=qs.done,ok=same(qs.sel,q.a),pct=Math.round(100*qs.i/qs.ids.length);
@@ -115,11 +116,12 @@ function run(){
   const s=qs.sel.includes(i),c=q.a.includes(i);
   const cls=!done?(s?' sel':''):c?(s?' ok':' miss'):(s?' no':'');
   const tag=!done?'':c?(s?' ✓':' (correct answer)'):(s?' ✗':'');
-  return '<button class="qo'+cls+'" data-q="opt" data-i="'+i+'" aria-pressed="'+s+'"><b>'+L[i]+'</b><span>'+esc(t)+tag+'</span></button>';
+  const x=!done&&qs.out.includes(i);
+  return '<div class="qr"><button class="qo'+cls+(x?' out':'')+'" data-q="opt" data-i="'+i+'" aria-pressed="'+s+'"'+(x?' disabled':'')+'><b>'+L[i]+'</b><span>'+esc(t)+tag+'</span></button>'+(done?'':'<button class="qe" data-q="elim" data-i="'+i+'" aria-pressed="'+x+'" aria-label="'+(x?'Restore':'Cross out')+' option '+L[i]+'">'+EYE+'</button>')+'</div>';
  }).join('');
  return '<div class="top"><button class="ghost" data-q="exit">Exit</button><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div style="width:'+pct+'%"></div></div><span class="meta">'+(qs.i+1)+'/'+qs.ids.length+'</span></div>'+
  '<section class="panel"><p class="meta">'+esc(q.d+(q.src?' · '+q.src:''))+'</p><div class="qs">'+esc(q.s)+'</div></section>'+
- '<p class="meta">'+(done?'':'Select all the correct answers. One or more may be correct.')+'</p>'+opts+
+ '<p class="meta">'+(done?'':'Select all the correct answers (one or more). Tap the crossed eye to rule an option out.')+'</p>'+opts+
  (done?'<p class="status'+(ok?'':' err')+'" role="status">'+(ok?'Correct.':'Incorrect. Correct answer: '+q.a.map(i=>L[i]).join(', ')+'.')+'</p>'+(q.e?'<div class="panel"><b>Explanation</b><div class="qx" style="border:0;margin:0;padding:6px 0 0">'+esc(q.e)+'</div></div>':'')+'<div class="row"><button class="primary" data-q="next" style="width:100%">'+(qs.i+1<qs.ids.length?'Next':'Finish')+'</button></div>'
   :'<div class="row"><button class="primary" data-q="check" style="width:100%"'+(qs.sel.length?'':' disabled')+'>Check answer</button></div><p class="meta hint">Keys A-E or 1-5 select, Enter checks.</p>');
 }
@@ -129,18 +131,20 @@ function fin(){
  (qs.miss.length?'<section class="panel"><h2>To review</h2>'+qs.miss.map(id=>{const q=Q.find(x=>x.id===id);return q?'<div class="cr"><div class="ct"><div class="cf">'+esc(q.s.slice(0,140))+'</div><div class="cb">Correct: '+q.a.map(i=>L[i]).join('')+'</div></div></div>':''}).join('')+'</section>':'')+
  '<div class="row">'+(qs.miss.length?'<button class="primary" data-q="again">Retry missed</button>':'')+'<button data-q="exit">Done</button></div>';
 }
-const begin=ids=>{qs={ids,i:0,sel:[],done:false,ok:0,miss:[]};R.render();scrollTo(0,0)};
+const begin=ids=>{qs={ids,i:0,sel:[],out:[],done:false,ok:0,miss:[]};R.render();scrollTo(0,0)};
 function check(){
  const q=cur();if(!q||qs.done||!qs.sel.length)return;
  const ok=same(qs.sel,q.a);qs.done=true;q.n++;if(ok){q.r++;qs.ok++}else qs.miss.push(q.id);q.last=ok;sv();R.render();
 }
-function next(){qs.i++;qs.sel=[];qs.done=false;R.render();scrollTo(0,0)}
-function toggle(i){const q=cur();if(!q||qs.done||i<0||i>=q.o.length)return;const k=qs.sel.indexOf(i);if(k<0)qs.sel.push(i);else qs.sel.splice(k,1);qs.sel.sort();R.render()}
+function next(){qs.i++;qs.sel=[];qs.out=[];qs.done=false;R.render();scrollTo(0,0)}
+function elim(i){const q=cur();if(!q||qs.done)return;const k=qs.out.indexOf(i);if(k<0){qs.out.push(i);const x=qs.sel.indexOf(i);if(x>=0)qs.sel.splice(x,1)}else qs.out.splice(k,1);R.render()}
+function toggle(i){const q=cur();if(!q||qs.done||i<0||i>=q.o.length||qs.out.includes(i))return;const k=qs.sel.indexOf(i);if(k<0)qs.sel.push(i);else qs.sel.splice(k,1);qs.sel.sort();R.render()}
 
 $('#app').addEventListener('click',async e=>{
  const b=e.target.closest('[data-q]');if(!b||R.view!=='mcq')return;
  const a=b.dataset.q,i=+b.dataset.i;
  if(a==='opt')toggle(i);
+ else if(a==='elim')elim(i);
  else if(a==='check')check();
  else if(a==='next')next();
  else if(a==='exit'){qs=null;R.render();scrollTo(0,0)}
