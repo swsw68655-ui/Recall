@@ -263,7 +263,7 @@ function decks(){
   return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
 }
 
-const STEPS=[1,10],RSTEPS=[10],GRAD=1,EASYI=4,HARDF=1.2,EBONUS=1.3,LAHEAD=20*MIN;
+const STEPS=[1,10],RSTEPS=[10],GRAD=1,EASYI=4,HARDF=1.2,EBONUS=1.3,LAHEAD=0;
 const stOf=c=>c.isNew?'new':(c.st||(c.ivl>=1?'review':'learn'));
 const cons=(v,prev)=>Math.max(1,Math.round(v),prev+1);
 function fuzz(i){
@@ -321,7 +321,7 @@ function grade(g){
     if(!sess.cram)Object.assign(c,sched(c,g,true));
   }
   sess.q.shift();
-  if(c&&(sess.cram?g===1:c.st!=='review'))sess.q.push(id);
+  if(c&&(sess.cram?g===1:c.st!=='review')){sess.q.push(id);if(!sess.cram)(sess.hold||(sess.hold={}))[id]=c.due}
   sess.done++;sess.show=false;
   save();render();scrollTo(0,0);
 }
@@ -558,8 +558,12 @@ function settingsHTML(){
 }
 
 function studyHTML(){
-  const q=sess.q,c=q.length&&S.cards.find(x=>x.id===q[0]);
+  const q=sess.q,now=Date.now(),H=sess.hold||{},k=q.findIndex(id=>!(H[id]>now));
+if(k>0)q.unshift(q.splice(k,1)[0]);
+const c=q.length&&S.cards.find(x=>x.id===q[0]);
   const exit='<button class="ghost" data-a="tab" data-v="decks">Exit</button>';
+if(k<0){const wake=Math.min(...q.map(id=>H[id])),s=Math.max(1,Math.ceil((wake-now)/1000)),s0=sess;sess.show=false;clearTimeout(s0.t);s0.t=setTimeout(()=>{if(view==='study'&&sess===s0)render()},1000);
+return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">Next card in '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+'</div><p class="meta">'+plural(q.length,'card')+' waiting for its review time.</p></div><div class="acts"><button data-a="early" style="width:100%">Show it now</button></div></div>'}
   if(!c)return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">'+(sess.done?'Session complete. You reviewed '+plural(sess.done,'card')+'.':'Nothing is due right now. Come back later or raise your daily new-card limit.')+'</div></div><div class="acts"><button class="primary" data-a="tab" data-v="decks">Back to decks</button></div></div>';
   const pct=Math.round(100*sess.done/(sess.done+q.length));
   let acts;
@@ -610,6 +614,7 @@ app.addEventListener('click',async e=>{
   else if(a==='th'){S.theme=b.dataset.t;save();render()}
   else if(a==='tab'){view=b.dataset.v;msg=null;render();scrollTo(0,0)}
   else if(a==='show'){sess.show=true;render()}
+else if(a==='early'){sess.hold={};render()}
   else if(a==='imgfit'){imgScroll=!imgScroll;try{localStorage.setItem('recall.imgscroll',imgScroll?'1':'0')}catch(e){}render()}
   else if(a==='g')grade(+b.dataset.g);
   else if(a==='import')doImport();
