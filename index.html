@@ -558,11 +558,13 @@ function settingsHTML(){
 }
 
 function studyHTML(){
-  const q=sess.q,now=Date.now(),H=sess.hold||{},k=q.findIndex(id=>!(H[id]>now));
+  const q=sess.q,now=Date.now(),H=sess.hold||(sess.hold={});
+if(!sess.cram&&'f' in sess)for(const x of S.cards)if(!x.isNew&&stOf(x)!=='review'&&(!sess.f||x.folder===sess.f)&&(!sess.d||x.deck===sess.d)&&!q.includes(x.id)){q.push(x.id);H[x.id]=x.due}
+const k=q.findIndex(id=>!(H[id]>now));
 if(k>0)q.unshift(q.splice(k,1)[0]);
 const c=q.length&&S.cards.find(x=>x.id===q[0]);
   const exit='<button class="ghost" data-a="tab" data-v="decks">Exit</button>';
-if(k<0){const wake=Math.min(...q.map(id=>H[id])),s=Math.max(1,Math.ceil((wake-now)/1000)),s0=sess;sess.show=false;clearTimeout(s0.t);s0.t=setTimeout(()=>{if(view==='study'&&sess===s0)render()},1000);
+if(k<0&&q.length){const wake=Math.min(...q.map(id=>H[id])),s=Math.max(1,Math.ceil((wake-now)/1000)),s0=sess;sess.show=false;clearTimeout(s0.t);s0.t=setTimeout(()=>{if(view==='study'&&sess===s0)render()},1000);
 return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">Next card in '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+'</div><p class="meta">'+plural(q.length,'card')+' waiting for its review time.</p></div><div class="acts"><button data-a="early" style="width:100%">Show it now</button></div></div>'}
   if(!c)return '<div class="rvp">'+warnHTML()+'<div class="top">'+exit+'</div><div class="card"><div class="f1">'+(sess.done?'Session complete. You reviewed '+plural(sess.done,'card')+'.':'Nothing is due right now. Come back later or raise your daily new-card limit.')+'</div></div><div class="acts"><button class="primary" data-a="tab" data-v="decks">Back to decks</button></div></div>';
   const pct=Math.round(100*sess.done/(sess.done+q.length));
