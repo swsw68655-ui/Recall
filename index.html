@@ -560,8 +560,9 @@ function settingsHTML(){
 function studyHTML(){
   const q=sess.q,now=Date.now(),H=sess.hold||(sess.hold={});
 if(!sess.cram&&'f' in sess)for(const x of S.cards)if(!x.isNew&&stOf(x)!=='review'&&(!sess.f||x.folder===sess.f)&&(!sess.d||x.deck===sess.d)&&!q.includes(x.id)){q.push(x.id);H[x.id]=x.due}
-const k=q.findIndex(id=>!(H[id]>now));
-if(k>0)q.unshift(q.splice(k,1)[0]);
+let k=-1,bt=Infinity;q.forEach((id,i)=>{const h=H[id];if(h!==undefined&&h<=now&&h<bt){bt=h;k=i}});
+if(k<0)k=q.findIndex(id=>!(H[id]>now));
+if(k>0&&!sess.show)q.unshift(q.splice(k,1)[0]);
 const c=q.length&&S.cards.find(x=>x.id===q[0]);
   const exit='<button class="ghost" data-a="tab" data-v="decks">Exit</button>';
 if(k<0&&q.length){const wake=Math.min(...q.map(id=>H[id])),s=Math.max(1,Math.ceil((wake-now)/1000)),s0=sess;sess.show=false;clearTimeout(s0.t);s0.t=setTimeout(()=>{if(view==='study'&&sess===s0)render()},1000);
@@ -657,11 +658,11 @@ addEventListener('keydown',e=>{
   const t=e.target,tag=t.tagName;
   if(tag==='INPUT'||tag==='TEXTAREA')return;
   if(!sess.show){
-    if(e.key===' '||e.key==='Enter'){
+    if(e.key===' '||e.key==='Enter'||e.code==='Space'){
       if(t.closest&&t.closest('button')&&t.dataset.a!=='show')return;
       e.preventDefault();sess.show=true;render();
     }
-  }else if(e.key.length===1&&'1234'.includes(e.key))grade(+e.key);
+  }else{const k=e.key||'',g=(/^(?:Digit|Numpad)([1-4])$/.exec(e.code||'')||[])[1]||(k.length===1?('1234'.indexOf(k)+1||'\u0661\u0662\u0663\u0664'.indexOf(k)+1):0);if(g)grade(+g)}
 });
 
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
